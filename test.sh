@@ -37,7 +37,6 @@ else
 	echo "postgresql is alive ... ok :)"
 fi	
 echo ""
-echo ""
 
 #read cpu
 CPU=$(ssh root@10.106.94.104 "systemd-cgtop -M pxmc")
@@ -54,3 +53,13 @@ MEM=$(ssh root@10.106.94.104 "systemd-cgtop -M pxmc")
 #echo "MEM=${MEM}"
 MEM=$(echo ${MEM} | awk '{print $4}')
 echo "MEM=${MEM}"
+echo ""
+
+#Test if UI is reachable
+wget -q https://10.106.94.104/pxmc --no-check-certificate
+if [ $? -eq 0 ]
+then
+	echo "UI is reacheable ... ok :)"
+else
+	echo "UI is not reachable ERROR ... :("
+fi
