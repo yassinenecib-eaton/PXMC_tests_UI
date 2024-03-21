@@ -23,6 +23,8 @@ ssh root@10.106.94.104 "journalctl -M pxmc | grep -i \"PXMCApplication.*failed*\
 if [ $? -eq 0 ]
 then
 	echo "PXMCApplication ERROR ... :("
+else
+	echo "PXMCApplication is alive ... ok :)"
 fi	
 echo ""
 
@@ -31,6 +33,8 @@ ssh root@10.106.94.104 "journalctl -M pxmc | grep -i \"postgresql.*failed*\""
 if [ $? -eq 0 ]
 then
 	echo "postgresql ERROR ... :("
+else
+	echo "postgresql is alive ... ok :)"
 fi	
 echo ""
 echo ""
