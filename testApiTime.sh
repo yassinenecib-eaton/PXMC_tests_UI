@@ -1,9 +1,7 @@
 #!/bin/bash
 clear
 echo ##########GET request for time#############
-wget -S --no-check-certificate --header 'authorization: Basic YWRtaW46U2VjdXJpdHkuNHU=' -q  https://10.130.129.211/api/system/v1/time -O tmpfile
-clear
-
+wget --method GET --no-check-certificate -q --header 'authorization: Basic YWRtaW46U2VjdXJpdHkuNHU='  https://10.130.129.211/api/system/v1/time -O tmpfile
 #echo "$(cat tmpfile)"
 
 grep -o [0-9].*Z  tmpfile > tmpsfile2
@@ -13,5 +11,5 @@ if [ $? -eq 0 ]
 then
 	echo "Correct UTC format: $ANS"
 fi
-rm tmp* file*
-echo ##########GET request for time#############
+rm tmp* # file* 
+echo "##########GET request for time#############"
