@@ -165,7 +165,7 @@ compute_result ()
 	if [ "$?" -eq 0 ]
 	then
 		echo "File file.log copied in the target properly"
-		scp root@${IP} "ls -l /var/log/smp/"
+		ssh root@${IP} "ls -l /var/log/smp/"
 	fi
 	#echo -e "${BUFFER_LOG}" > ./file.log
 }
