@@ -106,7 +106,7 @@ echo ""
 
 check_PXMC_tests ()
 {
-ssh root@${IP} "ls /var/containers/data/pxmc/usr/PXMCApplication/*.zip"
+ssh root@${IP} "ls /var/containers/data/pxmc/PXMCApplication/*.zip"
 	if [ "$?" -ne 0 ]
 	then
 		echo "PXMC tests... ok :)"
