@@ -21,9 +21,9 @@ PXMC_info ()
 {
 
 SERIAL_NUMBER=$(ssh root@${IP}  "sys-prod | head -3 | tail -1 | cut -d "=" -f 2")
-HARDWARE=$(echo $a | grep -o DA305[0-9])
+HARDWARE=$(ssh root@${IP} "sys-prod | grep -o DA305[0-9]")
 
-if [ -z "${SERIAL_NUMBER}" ] && [ "${HARDWARE}" ]
+if [ ! -z "${SERIAL_NUMBER}" ] && [ ! -z "${HARDWARE}" ]
 then
 	echo "Serial Number: ${SERIAL_NUMBER} :)"
 	echo "Hardware: ${HARDWARE} :)"
