@@ -9,14 +9,25 @@ PATH_SMP_LOG="/var/log/smp/"
 FILE_TMP="/var/log/smp/tmp_file_load_container"
 A_PATH="/var/containers/data/pxmc/"
 BUFFER_LOG=""
-
+IP=""
 #########################################
 ###########Program starts here###########
 #########################################
 
 echo "Enter IP of the DA"
-#read IP
-IP=192.168.2.212
+read IP
+if [ -z ${IP} ]
+then
+	#current IP of my local machine
+	IP=192.168.2.212
+else
+	ping -c 3 ${IP}
+	if [ $? -ne 0 ]
+	then
+		printf "IP: $IP is not reachable \033[91m FAILED\n\033[0m"
+		exit
+	fi
+fi
 PXMC_info ()
 {
 
@@ -138,6 +149,11 @@ compute_result ()
 		BUFFER_LOG="${BUFFER_LOG} \nThe following test failed: ${FAIL}"
 		BUFFER_LOG="${BUFFER_LOG} \n${RES} % failed"
 
+	elif [ "${CPT}" -eq 0 ]
+	then
+		echo "Nothing done"
+		ssh root@${IP} "echo \"Nothing done\" > /var/log/smp/load-test-file"
+		exit
 	else
 		BUFFER_LOG="${BUFFER_LOG} \nAll tests passed :)"
 		BUFFER_LOG="${BUFFER_LOG} \n${RESULT}"
