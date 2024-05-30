@@ -1,5 +1,5 @@
 #!/bin/sh
-
+set -x 
 clear
 RESULT=0
 RESULT_FAIL=0
@@ -7,6 +7,7 @@ CPT=0
 FAIL=""
 PATH_SMP_LOG="/var/log/smp/"
 FILE_TMP="/var/log/smp/tmp_file_load_container"
+FILE_RESULT="load-test-file"
 A_PATH="/var/containers/data/pxmc/"
 BUFFER_LOG=""
 IP=""
@@ -14,7 +15,7 @@ IP=""
 ###########Program starts here###########
 #########################################
 
-echo "Enter IP of the DA"
+echo "Enter IP of the DA, of press enter if 192.168.2.212"
 read IP
 if [ -z ${IP} ]
 then
@@ -53,34 +54,49 @@ CPT=$((CPT+1))
 echo ""
 }
 
+handle_signature_error ()
+{
+	echo "ERROR Signature... $1 :("
+	BUFFER_LOG="${BUFFER_LOG} \npxmc containers FAILED"
+	printf "Test ERROR Signature\033[91m FAILED\n\033[0m"
+	FAIL="${FAIL} \ntest if signature is valid $1"
+	RESULT_FAIL=$((RESULT_FAIL+1))
+}
+
 BUFFER_LOG=$(date)
 BUFFER_LOG="${BUFFER_LOG} \n#######################"
 #test if signature is valid
 check_signature ()
 {
-	BUFFER_LOG="${BUFFER_LOG} \ntest if signature is valid"
-
-	PXMC_SIGNATURE_1=$(ssh root@${IP} "tail -5 /var/log/smp/System/00000000.log | grep -e \"Signature validation OK (SmpDevRootCA1) for: pxmc-container\" | wc -l")
-
-	PXMC_SIGNATURE_2=$(ssh root@${IP} "dmesg | grep -e \"Signature validation OK.*for: pxmc-container.squashfs\"")
-	PXMC_SIGNATURE_2=$?
-
-	PXMC_SIGNATURE_3=$(ssh root@${IP} "dmesg | grep -e \"Signature verification succeeded.*pxmc-container\"")
-	PXMC_SIGNATURE_3=$?
-
-	if [ "${PXMC_SIGNATURE_1}" -eq 2 ] && [ "${PXMC_SIGNATURE_2}" -eq  0 ] && [ "${PXMC_SIGNATURE_3}" -eq  0 ]
+	ssh root@${IP} "dmesg  | grep \"Signature validation OK.*for: firststage certificates\""
+	if [ "$?" -eq 0 ]
 	then
-		echo "Signature validation OK ... ok :)"
-		BUFFER_LOG="${BUFFER_LOG} \nSignature validation OK PASSED"
-		printf "Signature validation OK\033[92m PASSED\n\033[0m"
-		RESULT=$((RESULT+1))
-		#	echo "${RESULT}"
+		ssh root@${IP} "dmesg | grep \"Signature validation OK.*for: core firmware\""
+		if [ "$?" -eq  0 ]
+		then
+			ssh root@${IP} "dmesg | grep \"Signature validation OK.*for: application firmware\""
+			
+			if [ "$?" -eq  0 ]
+			then
+				ssh root@${IP} "dmesg | grep \"Signature validation OK.*for: pxmc-container.squashfs\""
+				if [ "$?" -eq  0 ]
+				then
+					echo "Signature validation OK ... ok :)"
+					BUFFER_LOG="${BUFFER_LOG} \nSignature validation OK PASSED"
+					printf "Signature validation OK\033[92m PASSED\n\033[0m"
+					RESULT=$((RESULT+1))
+				else
+					handle_signature_error "Signature validation OK.*for: pxmc-container.squashfs"
+				fi
+					
+			else
+				handle_signature_error "Signature validation OK.*for: application firmware"
+			fi
+		else
+			handle_signature_error "Signature validation OK.*for: core firmware"
+		fi
 	else
-		echo "ERROR Signature... :("
-		BUFFER_LOG="${BUFFER_LOG} \npxmc containers FAILED"
-		printf "Test ERROR Signature\033[91m FAILED\n\033[0m"
-		FAIL="${FAIL} \ntest if signature is valid "
-		RESULT_FAIL=$((RESULT_FAIL+1))
+		handle_signature_error "Signature validation OK.*for: firststage certificates" 
 	fi
 	CPT=$((CPT+1))
 	echo ""
@@ -96,8 +112,8 @@ ssh root@${IP} "cat ${FILE_TMP} | grep -o \"100%\""
 if [ $? -eq 0 ]
 then
 	echo "UI is reacheable ... ok :)"
-	BUFFER_LOG="${BUFFER_LOG} \nUI test PASSED"
-	printf "UI test \033[92m PASSED\n\033[0m"
+	BUFFER_LOG="${BUFFER_LOG} \nUI_reacheable test PASSED"
+	printf "UI_reacheable test \033[92m PASSED\n\033[0m"
 	RESULT=$((RESULT+1))
 	#	echo "${RESULT}"
 else
@@ -105,8 +121,8 @@ else
 	if [ "$?" -eq 0 ]
 	then
 		BUFFER_LOG="${BUFFER_LOG} \nERROR UI BAD Gateway  ... :("
-		BUFFER_LOG="${BUFFER_LOG} \nUI test FAILED"
-		printf "UI test: ERROR UI BAD Gateway \033[91m FAILED\n\033[0m"
+		BUFFER_LOG="${BUFFER_LOG} \nUI_reacheable test FAILED"
+		printf "UI_reacheable test: ERROR UI BAD Gateway \033[91m FAILED\n\033[0m"
 		FAIL="${FAIL} UI "
 		RESULT_FAIL=$((RESULT_FAIL+1))
 	fi
@@ -160,7 +176,7 @@ compute_result ()
 		printf "All test passed \033[92m PASSED\n\033[0m"
 	fi
 
-	ssh root@${IP} "echo -e \"${BUFFER_LOG}\" > /var/log/smp/load-test-file"
+	echo -e \"${BUFFER_LOG}\" > ./${FILE_RESULT}
 }
 
 while true
@@ -170,6 +186,7 @@ do
 	echo "2) Check Signature"
 	echo "3) UI reacheable"
 	echo "4) PXMC info software/hardware"
+	echo "A or a) Run all tests"
 	echo "h or H) Help"
 	echo "q or Q) Quit"
 	echo "####################################################"
@@ -191,7 +208,14 @@ do
 	elif [ "${INPUT}" = "4" ]
 	then
 		PXMC_info
-		
+	elif [ "${INPUT}" = "a" ] || [ "${INPUT}" = "A" ]
+	then
+		check_PXMC_tests
+		check_signature
+		UI_reacheable
+		PXMC_info
+		compute_result
+		exit
 	elif [ "${INPUT}" = "h" ] || [ "${INPUT}" = "H" ]
 	then
 		help_manuel
